@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(kableExtra)
 library(vcdExtra)
+library(magrittr)
 
 ```
 
@@ -425,7 +426,23 @@ MOHK_effect_size
 
 # Problem 4. Proportions of “legal” lobsters at the 5 sites in 2017. The legal minimum carapace size for lobster is 82.6 mm. What proportion of observed lobsters at each site are above the legal minimum? Does that proportion differ significantly across the 5 sites? Note: We’ll be doing chi-square in labs next week, or go ahead with maximum resourcefulness and check out the chisq.test() function on your own!
 
+# Make a contingency table for lobster carapace size:
+lob_size <- lob_abun_simple %>% # Create data frame for lobster carapace size from "lob_abun_simple" data frame (created in Problem 2), which has data in tidy format
+  filter(YEAR == 2017) %>% 
+  select(YEAR, SITE, SIZE)
 
+lob_size_legal <- mutate(lob_size, LEGAL = SIZE>=82.6) %>% 
+  filter(LEGAL == TRUE) %>% 
+  count(SITE, LEGAL) %>% 
+  spread(LEGAL, n)
+  
+lob_size_illegal <- mutate(lob_size, ILLEGAL = SIZE>=82.6) %>% 
+  filter(ILLEGAL == FALSE) %>% 
+  count(SITE, ILLEGAL) %>% 
+  spread(ILLEGAL, n)
+
+# how to combine the above data frames into one table??
+  
 
 ```
 
