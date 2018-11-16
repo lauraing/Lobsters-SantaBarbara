@@ -16,6 +16,8 @@ library(tidyverse)
 library(kableExtra)
 library(vcdExtra)
 library(magrittr)
+library(effsize)
+library(pwr)
 
 ```
 
@@ -231,14 +233,28 @@ lab_col_12vs17
 ```
 
 ```{r,echo = FALSE, message = FALSE}
-# Data exploration: 
+#Data exploration to try to see if  data looks normally distributed at each site. 
+#... not woking... not sure why not.. ill mess with it later
 
 #Exploratory histogram:
-hist_12vs17 <- ggplot(lab_simple_12vs17, aes(x= "SIZE"))+ 
-   geom_histogram(aes (fill= "red"))+ 
-   facet_wrap (~ SITE, scale ="free")
-hist_12vs17
+#hist_12vs17 <- ggplot(lob_size, aes(x= "SIZE"))+ 
+  # geom_histogram(stat = "count")+ 
+  # facet_wrap (~ SITE, scale ="free")
+#hist_12vs17
 
+#Exploratory QQ plot
+#QQ_12vs17 <- ggplot(lob_size, aes(sample= "SIZE"))+ 
+  # geom_qq()+ 
+  # facet_wrap (~ SITE, scale ="free")
+ # theme_classic()
+
+#QQ_12vs17
+
+
+```
+
+
+```{r,echo = FALSE, message = FALSE}
 
 
 #Preform 5 two sample t-test to test if lobster sizes differ significantly between 2012 and 2016(one t test per site)
@@ -260,25 +276,19 @@ NAPL_abun_17
 #f test to test if variances are equal
 NAPL_ftest<-var.test(NAPL_abun_17, NAPL_abun_12)
 NAPL_ftest
-#p-value = 0.9555 thus variances are equal
+#p-value =  0.7685 thus variances are equal
 
 #two sample, two sided t-test
 t_test<- t.test(NAPL_abun_17, NAPL_abun_12, var.equal=TRUE)
 t_test 
-#p-value < 2.2e-16
-#thus, there is NOT significant diference between the two means
+#p-value =0.5002
+#thus, there IS significant diference between the two means
 
 #test effect size
 NAPL_effect_size<- cohen.d(NAPL_abun_17, NAPL_abun_12)
 NAPL_effect_size  
-# cohens d = 2.100624 (large)
-# thus, ?
-
-
-```
-
-
-
+# cohens d = 0.2834216 (small)
+# Thus, we have a small effect size
 ```{r,echo = FALSE, message = FALSE}
 
 
@@ -298,19 +308,19 @@ IVEE_abun_17
 #f test to test if variances are equal
 IVEE_ftest<-var.test(IVEE_abun_17, IVEE_abun_12)
 IVEE_ftest
-#p-value < 2.2e-16 thus variances are NOT equal
+#p-value 0.307 thus variances are equal
 
 #two sample, two sided t-test
-t_test<- t.test(IVEE_abun_17, IVEE_abun_12, var.equal=FALSE)
+t_test<- t.test(IVEE_abun_17, IVEE_abun_12, var.equal=TRUE)
 t_test 
-#p-value = 5.485e-08
-#thus, there is NOT significant diference between the two means
+#p-value = 0.0599
+#thus, there IS a significant diference between the two means
 
 #test effect size
 IVEE_effect_size<- cohen.d(IVEE_abun_17, IVEE_abun_12)
 IVEE_effect_size  
-# cohens d = 2.428349 (Large)
-# thus, ?
+# cohens d = 0.3775177 (small)
+# Thus, we have a small effect size
 
 ```
 
@@ -319,7 +329,6 @@ IVEE_effect_size
 # Simplify data forAQUE
 AQUE_abun_12<- lob_abun_simple %>% 
   filter(SITE=="AQUE", YEAR== "2012", SIZE!= "-99999") %>% 
-  
   pull("SIZE")
 AQUE_abun_12
 
@@ -331,23 +340,21 @@ AQUE_abun_17
 #f test to test if variances are equal
 AQUE_ftest<-var.test(AQUE_abun_17, AQUE_abun_12)
 AQUE_ftest
-#p-value = 0.8919 thus variances are  equal
+#p-value = 0.2986 thus variances are  equal
 
 #two sample, two sided t-test
 t_test<- t.test(AQUE_abun_17, AQUE_abun_12, var.equal=TRUE)
 t_test 
-# p-value = 0.78
-#thus, there is a significant diference between the two means
+# p-value = 0.2097
+#thus, there IS a significant diference between the two means
 
 #test effect size
 AQUE_effect_size<- cohen.d(AQUE_abun_17, AQUE_abun_12)
 AQUE_effect_size  
-# cohens d = 0.05185604 (neglegable)
-# thus, ?
+# cohens d = 0.2563169 (small)
+# Thus, we have a small effect size
 
 ```
-
-
 ```{r,echo = FALSE, message = FALSE}
 
 # Simplify data for CARP
@@ -364,25 +371,27 @@ CARP_abun_17
 #f test to test if variances are equal
 CARP_ftest<-var.test(CARP_abun_17, CARP_abun_12)
 CARP_ftest
-#p-value < 2.2e-16 thus variances are not equal
+#p-value=  0.2043 thus variances not equal
 
 
 #two sample, two sided t-test
-t_test<- t.test(CARP_abun_17, CARP_abun_12, var.equal=FALSE)
+t_test<- t.test(CARP_abun_17, CARP_abun_12, var.equal=TRUE)
 t_test 
-#p-value = 4.158e-06
+#p-value = 0.1819
 #thus there is a significant difference between the two means
 
 
 # test effect size
 CARP_effect_size<- cohen.d(CARP_abun_17, CARP_abun_12)
 CARP_effect_size  
-# cohens d = 1.091036 (large)
-# thus, ?
+#cohens d =  - -0.1594364 (small)    
+#the cohens d values turned up NEGATIVE so I'll preform a power test to find a more accureate Cohens D
+CARP_power<- pwr.t.test(n = 783, d = NULL, sig.level = 0.05, power = 0.8)
+CARP_power
+#using the power test I found that the cohens d value is 0.1416723 which means there is a small effec size
+
 
 ```
-
-
 
 ```{r,echo = FALSE, message = FALSE}
 
@@ -400,26 +409,30 @@ MOHK_abun_17
 #f test to test if variances are equal
 MOHK_ftest<-var.test(MOHK_abun_17, MOHK_abun_12)
 MOHK_ftest
-#p-value = 2.499e-13 thus variances are not equal 
+#p-value = 0.1509 thus variances are equal 
 # thus there is not a significant difference between the two means
 
 
 #two sample, two sided t test
-t_test<- t.test(MOHK_abun_17, MOHK_abun_12, var.equal=FALSE)
+t_test<- t.test(MOHK_abun_17, MOHK_abun_12, var.equal=TRUE)
 t_test 
-#p value = 0.05988
-#there is a significant difference between the two means
-
+#p value = 6.276e-05
+#there is NOT a significant difference between the two means
 
 # cohens-d test
 MOHK_effect_size<- cohen.d(MOHK_abun_17, MOHK_abun_12)
 MOHK_effect_size  
-#cohens d =  .32
-#thus, ?
+#cohens d =  -0.5408116 (medium)    
+#the cohens d values turned up NEGATIVE so I'll preform a power test to find Cohens D
+MOHK_power<- pwr.t.test(n = 261, d = NULL, sig.level = 0.05, power = 0.8)
+MOHK_power
+#using the power test I found that the cohens d value is  0.2457094 which means there is a small effec size
+
+#combine legal and illegal data frames by site
+lob_illegal_legal<- merge(x= lob_size_illegal, y=lob_size_legal, by= c("SITE"), all=TRUE) %>% 
+  arrange(SITE)
 
 ```
-
-
 
 
 ```{r}
@@ -429,20 +442,14 @@ MOHK_effect_size
 # Make a contingency table for lobster carapace size:
 lob_size <- lob_abun_simple %>% # Create data frame for lobster carapace size from "lob_abun_simple" data frame (created in Problem 2), which has data in tidy format
   filter(YEAR == 2017) %>% 
-  select(YEAR, SITE, SIZE)
-
-lob_size_legal <- mutate(lob_size, LEGAL = SIZE>=82.6) %>% 
-  filter(LEGAL == TRUE) %>% 
-  count(SITE, LEGAL) %>% 
-  spread(LEGAL, n)
+  mutate(Legality = ifelse(SIZE < 82.6, "ILLEGAL", "LEGAL")) %>% 
+  select(SITE, Legality) %>% 
+  count(SITE, Legality) %>% 
+  spread(Legality, n) %>% 
+  select(-SITE)
   
-lob_size_illegal <- mutate(lob_size, ILLEGAL = SIZE>=82.6) %>% 
-  filter(ILLEGAL == FALSE) %>% 
-  count(SITE, ILLEGAL) %>% 
-  spread(ILLEGAL, n)
+rownames(lob_size) <- c("AQUE", "CARP", "IVEE", "MOHK", "NAPL")
 
-# how to combine the above data frames into one table??
-  
 
 ```
 
