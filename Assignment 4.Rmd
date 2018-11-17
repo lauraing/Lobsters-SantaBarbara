@@ -147,14 +147,15 @@ lob_simple<-lob_abun_simple %>%
            SD= sd(SIZE),
            Median= median(SIZE),
            Maximum= max(SIZE),
-           SampleSize= length(SIZE))
+           SampleSize= length(SIZE),
+           SE= SD/sqrt(SampleSize))
            
 lob_simple
 
 # make column graph of mean lobster sizes 
 lob_col<-ggplot(lob_simple, aes(x= SITE, y = Mean))+
   geom_col(aes(fill= "pink"), color="white") +
-  geom_errorbar(aes(ymin= Mean-SD, ymax= Mean+SD, width=.3))+
+  geom_errorbar(aes(ymin= Mean-SE, ymax= Mean+SE, width=.3))+
   xlab("SITE")+
   ylab("Mean size(mm)") +
   ggtitle("Mean Lobster Size by Site in 2017") +
@@ -179,6 +180,7 @@ anov_sum
 
 lobby_boxplot <- ggplot(Lob_2017_simple, aes(x= SITE, y= SIZE)) +
   geom_boxplot(aes(fill = SITE, colour = SITE), alpha = 0.5) +
+  stat_summary(fun.data = mean_se, geom = "errorbar") +
   theme_classic() +
   labs(x= "Site", y= "Lobster Size" ) +
   theme(legend.position = "NONE")
