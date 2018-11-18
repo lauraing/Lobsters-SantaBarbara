@@ -187,22 +187,22 @@ lobby_boxplot <- ggplot(Lob_2017_simple, aes(x= SITE, y= SIZE)) +
 
 lobby_boxplot
 
+# At least two samples were taken from populations with different means. Which ones are different? All three are different from each other? Or something else?
+
+# Post-hoc testing using Tukey's HSD
+
+lob_Tukey <- TukeyHSD(anov_lobby)
+lob_Tukey
+# Naples Reef and Isla Vista differ significantly
+
 ```
 
-3. Changes in lobster size at MPA and non-MPA sites (comparing only 2012 and 2017 sizes)
-From the data description (http://sbc.lternet.edu/cgi-bin/showDataset.cgi?docid=knb-lter-sbc.77):
-“Data on abundance, size and fishing pressure of California spiny lobster (Panulirus interruptus)
-are collected along the mainland coast of the Santa Barbara Channel. Spiny lobsters are an
-important predator in giant kelp forests off southern California. Two SBC LTER study reefs are
-located in or near the California Fish and Game Network of Marine Protected Areas (MPA), Naples
-and Isla Vista, both established as MPAs on 2012-01-01. MPAs provide a unique opportunity to
-investigate the effects of fishing on kelp forest community dynamics. Sampling began in 2012 and
-is ongoing.”
-At Isla Vista and Naples Reef, the two protected MPA sites (with zero fishing pressure), how do lobster sizes
-in 2012 and 2017 compare? At the non-MPA sites?
+Mean lobster sizes for Naples Reef and Isla Vista are significantly different (F(df) = 4.78, p = 0.004, $\alpha$ = 0.05 with post-hoc Tukey's HSD, $\alpha$ = 0.05).
 
 
 ```{r,echo = FALSE, message = FALSE}
+
+# 3. Changes in lobster size at MPA and non-MPA sites (comparing only 2012 and 2017 sizes). From the data description (http://sbc.lternet.edu/cgi-bin/showDataset.cgi?docid=knb-lter-sbc.77): “Data on abundance, size and fishing pressure of California spiny lobster (Panulirus interruptus) are collected along the mainland coast of the Santa Barbara Channel. Spiny lobsters are an important predator in giant kelp forests off southern California. Two SBC LTER study reefs are located in or near the California Fish and Game Network of Marine Protected Areas (MPA), Naples and Isla Vista, both established as MPAs on 2012-01-01. MPAs provide a unique opportunity to investigate the effects of fishing on kelp forest community dynamics. Sampling began in 2012 and is ongoing.” At Isla Vista and Naples Reef, the two protected MPA sites (with zero fishing pressure), how do lobster sizes in 2012 and 2017 compare? At the non-MPA sites?
 
  lab_simple_12vs17<-lob_abun_simple %>% 
   select(YEAR, SITE, SIZE) %>% 
@@ -466,6 +466,7 @@ lob_x2$stdres # If beyond 2, pay attention for significance...
 lob_table <- kable(lob_prop) %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "bordered"), full_width = F, position = "left")
 lob_table
+# need to change to percentages in the table
 
 ```
 
