@@ -231,6 +231,7 @@ lab_col_12vs17 <- ggplot(lab_simple_12vs17, aes(x= SITE, y = Mean, group= YEAR))
 lab_col_12vs17
 # add legend with years...
 # when I add the manual color, it says "continuous value supplied to discrete scale"
+# if we can make this column graph look nice, include it in the report as well.
 
 ```
 
@@ -430,9 +431,6 @@ MOHK_power<- pwr.t.test(n = 261, d = NULL, sig.level = 0.05, power = 0.8)
 MOHK_power
 #using the power test I found that the cohens d value is  0.2457094 which means there is a small effec size
 
-#combine legal and illegal data frames by site
-lob_illegal_legal<- merge(x= lob_size_illegal, y=lob_size_legal, by= c("SITE"), all=TRUE) %>% 
-  arrange(SITE)
 
 ```
 
@@ -452,14 +450,23 @@ lob_size <- lob_abun_simple %>% # Create data frame for lobster carapace size fr
   
 rownames(lob_size) <- c("AQUE", "CARP", "IVEE", "MOHK", "NAPL")
 
+lob_size
+
+lob_prop <- prop.table(as.matrix(lob_size), 1) # Look at the actual proportions
+lob_prop
+
+# Perform chi-square test for independence on the count data (not proportions)
+lob_x2 <- chisq.test(lob_size)
+lob_x2
+
+lob_x2$stdres # If beyond 2, pay attention for significance...
+# There IS a significant association between legal lobster size between the 5 sites! Look at 'Values' section to see what things you can call from the output.
+
+# create kable table of proportion of legal lobsters at each site
+lob_table <- kable(lob_prop) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "bordered"), full_width = F, position = "left")
+lob_table
 
 ```
 
-
-
-
-
-
-
-
-
+The proportion of observed lobsters at a legal size differed significantly across the 5 sites ($\chi^2$(`r lob_x2$parameter`) = `r round(lob_x2$statistic, 2)`, p < 0.001, $\alpha$ = 0.05.) Most notably, Mohawk Reef had a higher proportion of illegal lobster size, while Naples had a higher proportion of legal lobster size compared to the rest of the 5 sites.
