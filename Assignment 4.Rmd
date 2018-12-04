@@ -2,7 +2,9 @@
 title: "Assignment 4"
 author: "Laura Ingulsrud"
 date: "11/15/2018"
-output: html_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -18,6 +20,9 @@ library(vcdExtra)
 library(magrittr)
 library(effsize)
 library(pwr)
+library(knitr)
+library(ggplot2)
+library(ggsignif)
 
 ```
 
@@ -36,22 +41,36 @@ lob_traps<- read.csv("lobster_traps.csv")
 
 lob_abundance <- lob_size_abundance %>% # Create simple data frame of lobster abundance from lob_size_abundance data frame
   select(YEAR, SITE, COUNT) %>% # Select only YEAR, SITE, and COUNT columns
-  filter(COUNT!=0) # Filter out all values of 0 in COUNT column
+  filter(COUNT!=0) %>%  # Filter out all values of 0 in COUNT column
+  rename(Site= SITE) %>% 
+  mutate(Site= case_when(Site== "CARP"~"Carpinteria",
+                         Site== "NAPL"~ "Naples",
+                         Site== "MOHK"~"Mohawk",
+                         Site== "AQUE"~"Arroyo Quemado",
+                         Site== "IVEE"~"Isla Vista"
+                      ))
+
 
 lob_traps_simple <- lob_traps %>% # Create simple data frame of lobster traps from lob_traps data frame
   select(YEAR, SITE, TRAPS) %>% # Select only YEAR, SITE, and TRAPS columns
   filter(SITE!="AHND",
          SITE!="ABUR",
          SITE!="AHND to AQUE",
-         SITE!="GOLB") # Filter out all sites except the 5 LTER locations: AQUE, NAPL, MOHK, IVEE, and CARP
+         SITE!="GOLB") %>%  # Filter out all sites except the 5 LTER locations: AQUE, NAPL, MOHK, IVEE, and CARP
+  rename(Site= SITE) %>% 
+    mutate(Site= case_when(Site== "CARP"~"Carpinteria",
+                         Site== "MOHK"~"Mohawk",
+                         Site== "AQUE"~"Arroyo Quemado" ))
+
+
 
 # Make scatter plot for annual lobster abundance by site (2012-2017)
 abundance <- lob_abundance %>% 
- group_by(SITE,YEAR) %>% 
+ group_by(Site,YEAR) %>% 
  summarize(total_count=round(sum(COUNT)), digits=1)%>% 
  ggplot(aes(x=YEAR,y= total_count)) +
  geom_point()+
- facet_wrap(~SITE, scale="free") +
+ facet_wrap(~Site, scale="free") +
  xlab("Year") +
  ylab("Total Count")
    
@@ -60,33 +79,34 @@ abundance # Call "abundance" scatter plot
 # Make a column graph of total lobster abundance by site
 abundance_col <- ggplot(lob_abundance, aes(x=YEAR, y=COUNT))+
   geom_col()+
-  facet_wrap(~SITE, scale="free")
+  facet_wrap(~Site, scale="free")
 
 abundance_col # Call "abundance_col" column graph
 
 # Make a line graph of total lobster abundance within each site (2012-2017)
 abundance_line <- as.data.frame(lob_abundance) %>% 
   expand.dft(freq = "COUNT")%>% 
-  count(YEAR, SITE) %>% 
+  count(YEAR, Site) %>% 
   ggplot(aes(x=YEAR, y=n))+
-  geom_line(aes(color=SITE))+
+  geom_line(aes(color=Site))+
   xlab("Year")+
-  ylab("Lobster Abundance (count)")+
-  ggtitle("Abundance of Lobster from 2012-2017") +
+  ylab("Lobster Abundance (Count)")+
+  theme(text = element_text(family = "Times New Roman")) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), panel.background = element_blank(),
         axis.line = element_line(colour = "black")) +
-  geom_point(aes(color=SITE))
+  geom_point(aes(color=Site))
+
 
 abundance_line # Call "abundance_line" line graph
 
 # Make scatter plot for annual traps set by site (2012-2017)
 traps <- lob_traps_simple %>% 
- group_by(SITE,YEAR) %>% 
+ group_by(Site,YEAR) %>% 
  summarize(total_count=round(sum(TRAPS)), digits=1)%>% 
  ggplot(aes(x=YEAR,y= total_count))+
  geom_point()+
- facet_wrap(~SITE, scale="free")+
+ facet_wrap(~Site, scale="free")+
  xlab("Year")+
  ylab("Total Traps")+
 scale_y_continuous(expand = c(0,0)) 
@@ -96,30 +116,28 @@ traps # Call "traps" scatter plot
 # Make a column graph of total traps set by site 
 traps_col<- ggplot(lob_traps_simple, aes(x=YEAR, y=TRAPS))+
   geom_col()+
-  facet_wrap(~SITE, scale="free")
+  facet_wrap(~Site, scale="free")
 
 traps_col # Call "traps_col" column graph
 
 # Make a line graph of total traps at each site (2012-2017)
 traps_line<- as.data.frame(lob_traps_simple) %>% 
   expand.dft(freq = "TRAPS") %>% 
-  count(YEAR, SITE) %>% 
+  count(YEAR, Site) %>% 
   ggplot(aes(x=YEAR, y=n))+
-  geom_line(aes(color= SITE))+
+  geom_line(aes(color= Site))+
   xlab("Year")+
   ylab("Fishing Pressure (Traps)")+
-  ggtitle("Fishing Pressure from 2012-2017 at Non-MPA Sites") +
+  theme(text = element_text(family = "Times New Roman")) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), panel.background = element_blank(),
         axis.line = element_line(colour = "black")) +
-  geom_point(aes(color=SITE))
+  geom_point(aes(color=Site))
  
 traps_line # Call "traps_line" line graph
 
 ```
-
-Fishing Pressure from 2012-2017 at Non-MPA Sites:
-
+Figure 1. 
 
 Abundance of Lobster from 2012-2017:
 AQUE stays relatively consistent
@@ -129,6 +147,8 @@ MOHK spikes between 2014 and 2015, then steadily decreases to 2017
 NAPL increases steadily between 2012 and 2015, then decreases steadily to 2017
 IVEE, MOHK, and NAPL all increase in abundance between 2013 and 2015, but then all decrease to 2016. Out of these 3 sites, only IVEE rapidly increases in abundance from 2016 to 2017; the other 2 sites (MOHK & NAPL) decrease slightly.
 CARP and AQUE both don't have large changes in abundance from 2012 to 2015; after 2015, AQUE abundance decreases a little, and CARP increases, with a large increase from 2016 to 2017.
+
+Fishing Pressure from 2012-2017 at Non-MPA Sites:
 
 ```{r,echo = FALSE, message = FALSE}
 
@@ -153,18 +173,20 @@ lob_simple<-lob_abun_simple %>%
 lob_simple
 
 # make column graph of mean lobster sizes 
-lob_col<-ggplot(lob_simple, aes(x= SITE, y = Mean))+
-  geom_col(aes(fill= "pink"), color="white") +
-  geom_errorbar(aes(ymin= Mean-SE, ymax= Mean+SE, width=.3))+
-  xlab("SITE")+
-  ylab("Mean size(mm)") +
-  ggtitle("Mean Lobster Size by Site in 2017") +
+lob_col<-ggplot(lob_simple, aes(x = SITE, y = Mean)) +
+  geom_col(aes(fill= "pink"), color="white", width = 0.6) +
+  geom_errorbar(aes(ymin= Mean-SD, ymax= Mean+SD, width=.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,110)) +
+  xlab("Site")+
+  ylab("Mean Lobster Size (mm)") +
+  scale_x_discrete(labels = c("Arroyo Quemado", "Carpinteria", "Isla Vista", "Mohawk", "Naples")) +
+  geom_signif(y_position = c(93,100), xmin = c(2,3), xmax = c(5,5), annotation = c("p = 0.023", "p = 0.004"), tip_length = 0.1, size = 0.5, textsize = 3) +
+  theme(text = element_text(family = "Times New Roman")) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), panel.background = element_blank(),
         legend.position= "none",
-        axis.line = element_line(colour = "black"))+ 
-  scale_y_continuous(expand = c(0,0)) +
-theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+        axis.line = element_line(colour = "black")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
   
 lob_col
 
@@ -197,70 +219,52 @@ lob_Tukey
 
 ```
 
-Mean lobster sizes for Naples Reef and Isla Vista are significantly different (F(df) = 4.78, p = 0.004, $\alpha$ = 0.05 with post-hoc Tukey's HSD, $\alpha$ = 0.05).
+Mean lobster sizes for Naples Reef and Isla Vista and Naples and Carpinteria are significantly different (F(df) = 4.78, p = 0.004, $\alpha$ = 0.05 with post-hoc Tukey's HSD, $\alpha$ = 0.05).
 
 
 ```{r,echo = FALSE, message = FALSE}
 
 # 3. Changes in lobster size at MPA and non-MPA sites (comparing only 2012 and 2017 sizes). From the data description (http://sbc.lternet.edu/cgi-bin/showDataset.cgi?docid=knb-lter-sbc.77): “Data on abundance, size and fishing pressure of California spiny lobster (Panulirus interruptus) are collected along the mainland coast of the Santa Barbara Channel. Spiny lobsters are an important predator in giant kelp forests off southern California. Two SBC LTER study reefs are located in or near the California Fish and Game Network of Marine Protected Areas (MPA), Naples and Isla Vista, both established as MPAs on 2012-01-01. MPAs provide a unique opportunity to investigate the effects of fishing on kelp forest community dynamics. Sampling began in 2012 and is ongoing.” At Isla Vista and Naples Reef, the two protected MPA sites (with zero fishing pressure), how do lobster sizes in 2012 and 2017 compare? At the non-MPA sites?
 
- lab_simple_12vs17<-lob_abun_simple %>% 
-  select(YEAR, SITE, SIZE) %>% 
-  filter(YEAR=="2017"| YEAR== "2012") %>% 
-  group_by(SITE,YEAR) %>% 
-  summarize(Mean= mean(SIZE),
-           SD= sd(SIZE),
-           Median= median(SIZE),
-           Maximum= max(SIZE),
-           SampleSize= length(SIZE))
-lab_simple_12vs17
+MPA12 <-lob_abun_simple  %>% 
+  filter(YEAR == "2012" | YEAR == "2017") %>% 
+  mutate(PROTECTED = case_when(
+    SITE == "IVEE" ~ "MPA",
+    SITE == "NAPL" ~ "MPA",
+    SITE == "AQUE" ~ "Non-MPA",
+    SITE == "CARP" ~ "Non-MPA",
+    SITE == "MOHK" ~ "Non-MPA")) %>% 
+  mutate(SITE= case_when(SITE== "CARP"~"Carpinteria",
+                         SITE== "NAPL"~ "Naples",
+                         SITE== "MOHK"~"Mohawk",
+                         SITE== "AQUE"~"Arroyo Quemado",
+                         SITE== "IVEE"~"Isla Vista"
+                      )) 
+  
 
-lab_col_12vs17 <- ggplot(lab_simple_12vs17, aes(x= SITE, y = Mean, group= YEAR))+
-  geom_col(aes(fill= YEAR), color="white",
-           position="dodge") +
-  xlab("SITE")+
-  ylab("Mean size(mm)") +
-  ggtitle("Mean Lobster Size by Site in 2012 and 2017") +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_blank(),
-        legend.position= "none",
-        axis.line = element_line(colour = "black"))+ 
-  scale_y_continuous(expand = c(0,0)) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+MPA_Graph_12<- ggplot(MPA12, aes(x= SITE, y= SIZE))+
+  geom_boxplot(aes(fill = PROTECTED))+
+  facet_wrap(~ YEAR)+
+  theme_classic()+
+  theme(text = element_text(family = "Times New Roman")) +
+  scale_x_discrete(limits = c("Arroyo Quemado", "Carpinteria", "Mohawk", "Isla Vista", "Naples"))+
+  ylab("Carapace Length (mm)")+
+  xlab("Site")+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-lab_col_12vs17
-# add legend with years...
-# when I add the manual color, it says "continuous value supplied to discrete scale"
-# if we can make this column graph look nice, include it in the report as well.
 
-```
+MPA_Graph_12 + theme(panel.spacing = unit(3, "lines"))
 
-```{r,echo = FALSE, message = FALSE}
-#Data exploration to try to see if  data looks normally distributed at each site. 
-#... not woking... not sure why not.. ill mess with it later
 
-#Exploratory histogram:
-#hist_12vs17 <- ggplot(lob_size, aes(x= "SIZE"))+ 
-  # geom_histogram(stat = "count")+ 
-  # facet_wrap (~ SITE, scale ="free")
-#hist_12vs17
-
-#Exploratory QQ plot
-#QQ_12vs17 <- ggplot(lob_size, aes(sample= "SIZE"))+ 
-  # geom_qq()+ 
-  # facet_wrap (~ SITE, scale ="free")
- # theme_classic()
-
-#QQ_12vs17
 
 
 ```
 
 
+
 ```{r,echo = FALSE, message = FALSE}
 
-
-#Preform 5 two sample t-test to test if lobster sizes differ significantly between 2012 and 2016(one t test per site)
+#Perform 5 two sample t-tests to test if lobster sizes differ significantly between 2012 and 2016 (one t-test per site)
 
 #H0: means are equal (differnce in means = 0)
 #Ha: means are NOT equal (difference in means is NOT 0)
@@ -276,7 +280,8 @@ NAPL_abun_17<- lob_abun_simple %>%
   pull("SIZE")
 NAPL_abun_17
 
-#f test to test if variances are equal
+
+#f-test to test if variances are equal
 NAPL_ftest<-var.test(NAPL_abun_17, NAPL_abun_12)
 NAPL_ftest
 #p-value =  0.7685 thus variances are equal
@@ -287,11 +292,20 @@ t_test
 #p-value =0.5002
 #thus, there IS significant diference between the two means
 
+#Two sided t test
+t_test<- t.test(NAPL_abun_17, NAPL_abun_12, var.equal=TRUE, alternative = "greater")
+t_test 
+#p-value = 0.2501
+
+
 #test effect size
 NAPL_effect_size<- cohen.d(NAPL_abun_17, NAPL_abun_12)
 NAPL_effect_size  
 # cohens d = 0.2834216 (small)
 # Thus, we have a small effect size
+
+```
+
 ```{r,echo = FALSE, message = FALSE}
 
 
@@ -314,10 +328,14 @@ IVEE_ftest
 #p-value 0.307 thus variances are equal
 
 #two sample, two sided t-test
-t_test<- t.test(IVEE_abun_17, IVEE_abun_12, var.equal=TRUE)
+t_test<- t.test(IVEE_abun_12, IVEE_abun_17, var.equal=TRUE)
 t_test 
 #p-value = 0.0599
 #thus, there IS a significant diference between the two means
+
+t_test<- t.test(IVEE_abun_12, IVEE_abun_17, var.equal=TRUE, alternative= "greater")
+t_test 
+#p-value = 0.9701
 
 #test effect size
 IVEE_effect_size<- cohen.d(IVEE_abun_17, IVEE_abun_12)
@@ -351,6 +369,11 @@ t_test
 # p-value = 0.2097
 #thus, there IS a significant diference between the two means
 
+t_test<- t.test(AQUE_abun_17, AQUE_abun_12, var.equal=TRUE, Alternative="Greater")
+t_test 
+
+#p-value = 0.2097
+
 #test effect size
 AQUE_effect_size<- cohen.d(AQUE_abun_17, AQUE_abun_12)
 AQUE_effect_size  
@@ -358,6 +381,7 @@ AQUE_effect_size
 # Thus, we have a small effect size
 
 ```
+
 ```{r,echo = FALSE, message = FALSE}
 
 # Simplify data for CARP
@@ -383,16 +407,19 @@ t_test
 #p-value = 0.1819
 #thus there is a significant difference between the two means
 
+t_test<- t.test(CARP_abun_17, CARP_abun_12, var.equal=TRUE, alternative = "less")
+t_test 
+
+# p-value = 0.09095
 
 # test effect size
 CARP_effect_size<- cohen.d(CARP_abun_17, CARP_abun_12)
 CARP_effect_size  
-#cohens d =  - -0.1594364 (small)    
+#cohens d =  -0.1594364 (small)    
 #the cohens d values turned up NEGATIVE so I'll preform a power test to find a more accureate Cohens D
 CARP_power<- pwr.t.test(n = 783, d = NULL, sig.level = 0.05, power = 0.8)
 CARP_power
 #using the power test I found that the cohens d value is 0.1416723 which means there is a small effec size
-
 
 ```
 
@@ -419,7 +446,7 @@ MOHK_ftest
 #two sample, two sided t test
 t_test<- t.test(MOHK_abun_17, MOHK_abun_12, var.equal=TRUE)
 t_test 
-#p value = 6.276e-05
+#p value > .0001
 #there is NOT a significant difference between the two means
 
 # cohens-d test
@@ -429,11 +456,8 @@ MOHK_effect_size
 #the cohens d values turned up NEGATIVE so I'll preform a power test to find Cohens D
 MOHK_power<- pwr.t.test(n = 261, d = NULL, sig.level = 0.05, power = 0.8)
 MOHK_power
-#using the power test I found that the cohens d value is  0.2457094 which means there is a small effec size
-
-
+#using the power test I found that the cohens d value is  0.2457094 which means there is a small effect size
 ```
-
 
 ```{r}
 
